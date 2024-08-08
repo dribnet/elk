@@ -20,6 +20,7 @@ from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 from tqdm import tqdm
 from transformers import PreTrainedModel
 from transformers.modeling_outputs import ModelOutput
+from queue import Empty
 
 from elk.utils import instantiate_model, pytree_map, select_usable_devices
 
@@ -117,7 +118,7 @@ class InferenceServer:
         for q in self._task_queues:
             try:
                 q.put_nowait(None)
-            except std_mp.queues.Empty:  # type: ignore[attr-defined]
+            except Empty:  # type: ignore[attr-defined]
                 pass
 
         self._manager.shutdown()
@@ -280,7 +281,7 @@ def round_robin(queues: list[mp.Queue]) -> Iterable[Any]:
 
         try:
             item = q.get(timeout=0.01)
-        except std_mp.queues.Empty:  # type: ignore[attr-defined]
+        except Empty:  # type: ignore[attr-defined]
             pass
         else:
             if item == SENTINEL:
